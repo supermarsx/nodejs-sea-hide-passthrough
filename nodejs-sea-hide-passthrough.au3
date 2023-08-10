@@ -1,4 +1,4 @@
-Local $passthroughBinary = "\NAME OF YOUR BINARY.exe" ; Binary you want to hide
+Local $passthroughBinary = "\NAME_OF_YOUR_BINARY.exe" ; Binary you want to hide
 Local $numArgs = $CmdLine[0] ; Get total number of args passed
 Local $allArgs = "" ; Store all args here
 For $i = 1 To $numArgs ; Loop through args and store them
