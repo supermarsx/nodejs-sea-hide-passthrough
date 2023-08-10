@@ -1,6 +1,6 @@
 # nodejs-sea-hide-passthrough
 
-This a simple binary passthrough that hides the console window when a SEA (Single Executable Application) is opened. Useful when you want a simple nodejs SEA to run on the background and don't show any console windows.
+This a simple binary passthrough that hides the console window when a SEA (Single Executable Application) is opened. Useful when you want a simple nodejs SEA to run on the background and don't show any console windows. It also passes along every console argument through.
 
 ## Usage
 1. Install AutoIt3
