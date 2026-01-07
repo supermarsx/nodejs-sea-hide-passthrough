@@ -52,6 +52,9 @@ jobs:
       - name: Build
         run: .\dev-scripts\build.ps1
         shell: powershell
+      - name: List Artifacts (Debug)
+        run: ls *.exe, *.zip, *.ini
+        shell: powershell
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:

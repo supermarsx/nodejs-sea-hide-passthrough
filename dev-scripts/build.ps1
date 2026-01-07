@@ -59,32 +59,58 @@ $zipNormal = "nodejs-sea-hide-passthrough.zip"
 $exeUpx = "nodejs-sea-hide-passthrough-upx.exe"
 $zipUpx = "nodejs-sea-hide-passthrough-upx.zip"
 
+# Ensure files exist before packaging
+if (-not (Test-Path $exeName) -or -not (Test-Path $configFile)) {
+    Write-Error "Missing build artifacts for packaging. Ensure $exeName and $configFile exist."
+    exit 1
+}
+
 # 1. Zip with binary and config
-Write-Host "Creating $zipNormal..."
-Compress-Archive -Path $exeName, $configFile -DestinationPath $zipNormal -Force
+Write-Host "Creating $zipNormal from $exeName and $configFile..."
+try {
+    if (Test-Path $zipNormal) { Remove-Item $zipNormal -Force }
+    Compress-Archive -Path $exeName, $configFile -DestinationPath $zipNormal -Force -ErrorAction Stop
+} catch {
+    Write-Error "Failed to create $zipNormal : $_"
+    exit 1
+}
 
 # 2. Check for UPX
-$upx = "upx.exe"
-if (Get-Command $upx -ErrorAction SilentlyContinue) {
-    Write-Host "UPX found. Creating compressed binary..."
+# Check PATH, then check Chocolatey standard path
+$upxPath = Get-Command "upx.exe" -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source
+if (-not $upxPath) {
+    $chocoUpx = "C:\ProgramData\chocolatey\bin\upx.exe"
+    if (Test-Path $chocoUpx) {
+        $upxPath = $chocoUpx
+    }
+}
+
+if ($upxPath) {
+    Write-Host "UPX found at '$upxPath'. Creating compressed binary..."
     
     # Copy original to new name for UPX
     Copy-Item $exeName -Destination $exeUpx -Force
     
     # Run UPX
-    & $upx --best $exeUpx
+    & $upxPath --best $exeUpx
     
     if ($LASTEXITCODE -eq 0) {
         Write-Host "UPX compression successful: $exeUpx"
         
         # 3. Zip with upxed binary and config
         Write-Host "Creating $zipUpx..."
-        Compress-Archive -Path $exeUpx, $configFile -DestinationPath $zipUpx -Force
+        try {
+            if (Test-Path $zipUpx) { Remove-Item $zipUpx -Force }
+            Compress-Archive -Path $exeUpx, $configFile -DestinationPath $zipUpx -Force -ErrorAction Stop
+        } catch {
+             Write-Error "Failed to create $zipUpx : $_"
+             exit 1
+        }
     } else {
-        Write-Host "WARNING: UPX compression failed. Skipping UPX artifacts."
+        Write-Warning "UPX compression failed. Skipping UPX artifacts."
     }
 } else {
-    Write-Host "UPX not found. Skipping UPX artifacts." 
+    Write-Warning "UPX not found. Skipping UPX artifacts." 
     # Not failing the build, just skipping optional artifacts
 }
 
