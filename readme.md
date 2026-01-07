@@ -1,10 +1,12 @@
 # nodejs-sea-hide-passthrough
 
-![GitHub stars](https://img.shields.io/github/stars/supermarsx/nodejs-sea-hide-passthrough?style=social)
-![GitHub forks](https://img.shields.io/github/forks/supermarsx/nodejs-sea-hide-passthrough?style=social)
-![GitHub watchers](https://img.shields.io/github/watchers/supermarsx/nodejs-sea-hide-passthrough?style=social)
-![GitHub issues](https://img.shields.io/github/issues/supermarsx/nodejs-sea-hide-passthrough)
-[![CI](https://github.com/supermarsx/nodejs-sea-hide-passthrough/actions/workflows/ci.yml/badge.svg)](https://github.com/supermarsx/nodejs-sea-hide-passthrough/actions/workflows/ci.yml)
+![GitHub release (latest by date)](https://img.shields.io/github/v/release/supermarsx/nodejs-sea-hide-passthrough?style=flat-square)
+![GitHub downloads](https://img.shields.io/github/downloads/supermarsx/nodejs-sea-hide-passthrough/total?style=flat-square)
+![GitHub stars](https://img.shields.io/github/stars/supermarsx/nodejs-sea-hide-passthrough?style=flat-square)
+![GitHub forks](https://img.shields.io/github/forks/supermarsx/nodejs-sea-hide-passthrough?style=flat-square)
+![GitHub watchers](https://img.shields.io/github/watchers/supermarsx/nodejs-sea-hide-passthrough?style=flat-square)
+![GitHub issues](https://img.shields.io/github/issues/supermarsx/nodejs-sea-hide-passthrough?style=flat-square)
+[![CI](https://github.com/supermarsx/nodejs-sea-hide-passthrough/actions/workflows/ci.yml/badge.svg?style=flat-square)](https://github.com/supermarsx/nodejs-sea-hide-passthrough/actions/workflows/ci.yml)
 
 This a simple binary passthrough that hides the console window when a SEA (Single Executable Application) is opened. Useful when you want a simple nodejs SEA to run on the background and don't show any console windows. It also passes along every console argument through.
 
