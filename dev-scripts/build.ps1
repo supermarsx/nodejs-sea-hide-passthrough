@@ -47,8 +47,45 @@ Write-Host "Compiling $scriptName -> $exeName..."
 
 if ($LASTEXITCODE -eq 0) {
     Write-Host "Build successful: $exeName"
-    exit 0
 } else {
     Write-Host "Build failed."
     exit $LASTEXITCODE
 }
+
+# --- Packaging & UPX ---
+
+$configFile = "config.ini"
+$zipNormal = "nodejs-sea-hide-passthrough.zip"
+$exeUpx = "nodejs-sea-hide-passthrough-upx.exe"
+$zipUpx = "nodejs-sea-hide-passthrough-upx.zip"
+
+# 1. Zip with binary and config
+Write-Host "Creating $zipNormal..."
+Compress-Archive -Path $exeName, $configFile -DestinationPath $zipNormal -Force
+
+# 2. Check for UPX
+$upx = "upx.exe"
+if (Get-Command $upx -ErrorAction SilentlyContinue) {
+    Write-Host "UPX found. Creating compressed binary..."
+    
+    # Copy original to new name for UPX
+    Copy-Item $exeName -Destination $exeUpx -Force
+    
+    # Run UPX
+    & $upx --best $exeUpx
+    
+    if ($LASTEXITCODE -eq 0) {
+        Write-Host "UPX compression successful: $exeUpx"
+        
+        # 3. Zip with upxed binary and config
+        Write-Host "Creating $zipUpx..."
+        Compress-Archive -Path $exeUpx, $configFile -DestinationPath $zipUpx -Force
+    } else {
+        Write-Host "WARNING: UPX compression failed. Skipping UPX artifacts."
+    }
+} else {
+    Write-Host "UPX not found. Skipping UPX artifacts." 
+    # Not failing the build, just skipping optional artifacts
+}
+
+exit 0
