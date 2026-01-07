@@ -2,15 +2,23 @@
 PowerShell helper to build AutoIt script.
 Compiles nodejs-sea-hide-passthrough.au3 to .exe using Aut2Exe.
 #>
-Write-Host "→ build: starting (Aut2Exe)..."
+Write-Host "→ build: starting (Aut2Exe) at $(Get-Date)"
 
 $scriptName = "nodejs-sea-hide-passthrough.au3"
 $exeName = "nodejs-sea-hide-passthrough.exe"
 $iconName = "icon.ico"
 
+Write-Host "Configuration:"
+Write-Host "  Script: $scriptName"
+Write-Host "  Output: $exeName"
+Write-Host "  Icon:   $iconName"
+
 if (-not (Test-Path $scriptName)) {
     Write-Host "ERROR: Source file '$scriptName' not found."
     exit 1
+}
+else {
+    Write-Host "  [OK] Source file found."
 }
 
 # Common AutoIt paths
@@ -20,14 +28,20 @@ $commonPaths = @(
     "C:\Program Files\AutoIt3\Aut2Exe\Aut2Exe.exe"
 )
 
+Write-Host "Searching for Aut2Exe..."
 # Use full path if Aut2Exe is not in PATH
 if (-not (Get-Command $aut2Exe -ErrorAction SilentlyContinue)) {
     foreach ($path in $commonPaths) {
+        Write-Host "  Checking: $path"
         if (Test-Path $path) {
             $aut2Exe = $path
+            Write-Host "  [Found] $path"
             break
         }
     }
+}
+else {
+    Write-Host "  [Found] Aut2Exe in PATH"
 }
 
 if (-not (Get-Command $aut2Exe -ErrorAction SilentlyContinue) -and -not (Test-Path $aut2Exe)) {
@@ -38,80 +52,126 @@ if (-not (Get-Command $aut2Exe -ErrorAction SilentlyContinue) -and -not (Test-Pa
 $buildArgs = @("/in", "$scriptName", "/out", "$exeName")
 
 if (Test-Path $iconName) {
+    Write-Host "  [Info] Icon file found, adding to build arguments."
     $buildArgs += "/icon"
     $buildArgs += "$iconName"
 }
+else {
+    Write-Host "  [Info] Icon file not found, skipping icon."
+}
 
 Write-Host "Compiling $scriptName -> $exeName..."
+Write-Host "  Command: & `"$aut2Exe`" $buildArgs"
 & $aut2Exe $buildArgs
 
 if (Test-Path $exeName) {
     Write-Host "Build successful: $exeName (Exit Code: $LASTEXITCODE)"
-} else {
+    Write-Host "  File size: $((Get-Item $exeName).Length) bytes"
+}
+else {
     Write-Error "Build failed. Output file '$exeName' not created. Exit Code: $LASTEXITCODE"
     exit 1
 }
 
 # --- Packaging & UPX ---
+Write-Host "`n--- Packaging & UPX Start ---"
 
 $configFile = "config.ini"
 $zipNormal = "nodejs-sea-hide-passthrough.zip"
 $exeUpx = "nodejs-sea-hide-passthrough-upx.exe"
 $zipUpx = "nodejs-sea-hide-passthrough-upx.zip"
 
+Write-Host "Packaging Config:"
+Write-Host "  Config File: $configFile"
+Write-Host "  Zip Normal:  $zipNormal"
+Write-Host "  Exe UPX:     $exeUpx"
+Write-Host "  Zip UPX:     $zipUpx"
+
 # Ensure files exist before packaging
-if (-not (Test-Path $exeName) -or -not (Test-Path $configFile)) {
-    Write-Error "Missing build artifacts for packaging. Ensure $exeName and $configFile exist."
+Write-Host "Verifying artifacts..."
+if (-not (Test-Path $exeName)) {
+    Write-Error "  [Missing] $exeName"
     exit 1
 }
+if (-not (Test-Path $configFile)) {
+    Write-Error "  [Missing] $configFile"
+    exit 1
+}
+Write-Host "  [OK] Artifacts present."
 
 # 1. Zip with binary and config
-Write-Host "Creating $zipNormal from $exeName and $configFile..."
+Write-Host "1. Creating $zipNormal from $exeName and $configFile..."
 try {
-    if (Test-Path $zipNormal) { Remove-Item $zipNormal -Force }
+    if (Test-Path $zipNormal) { 
+        Write-Host "  Removing existing $zipNormal..."
+        Remove-Item $zipNormal -Force 
+    }
     Compress-Archive -Path $exeName, $configFile -DestinationPath $zipNormal -Force -ErrorAction Stop
-} catch {
+    Write-Host "  [Success] Created $zipNormal"
+}
+catch {
     Write-Error "Failed to create $zipNormal : $_"
     exit 1
 }
 
 # 2. Check for UPX
+Write-Host "2. Checking for UPX..."
 # Check PATH, then check Chocolatey standard path
 $upxPath = Get-Command "upx.exe" -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source
 if (-not $upxPath) {
     $chocoUpx = "C:\ProgramData\chocolatey\bin\upx.exe"
+    Write-Host "  Searching Choco path: $chocoUpx"
     if (Test-Path $chocoUpx) {
         $upxPath = $chocoUpx
     }
 }
 
 if ($upxPath) {
-    Write-Host "UPX found at '$upxPath'. Creating compressed binary..."
+    Write-Host "  [Found] UPX found at '$upxPath'."
+    Write-Host "  Creating compressed binary..."
     
     # Copy original to new name for UPX
+    Write-Host "  Copying $exeName to $exeUpx..."
     Copy-Item $exeName -Destination $exeUpx -Force
+    if (Test-Path $exeUpx) {
+        Write-Host "  [OK] Copy created."
+    }
+    else {
+        Write-Error "  [Error] Failed to create copy."
+        exit 1
+    }
     
     # Run UPX
+    Write-Host "  Running UPX: & `"$upxPath`" --best `"$exeUpx`""
     & $upxPath --best $exeUpx
     
     if ($LASTEXITCODE -eq 0) {
-        Write-Host "UPX compression successful: $exeUpx"
+        Write-Host "  [Success] UPX compression successful: $exeUpx"
+        Write-Host "    New size: $((Get-Item $exeUpx).Length) bytes"
         
         # 3. Zip with upxed binary and config
-        Write-Host "Creating $zipUpx..."
+        Write-Host "3. Creating $zipUpx..."
         try {
-            if (Test-Path $zipUpx) { Remove-Item $zipUpx -Force }
+            if (Test-Path $zipUpx) { 
+                Write-Host "  Removing existing $zipUpx..."
+                Remove-Item $zipUpx -Force 
+            }
             Compress-Archive -Path $exeUpx, $configFile -DestinationPath $zipUpx -Force -ErrorAction Stop
-        } catch {
-             Write-Error "Failed to create $zipUpx : $_"
-             exit 1
+            Write-Host "  [Success] Created $zipUpx"
         }
-    } else {
-        Write-Warning "UPX compression failed. Skipping UPX artifacts."
+        catch {
+            Write-Error "Failed to create $zipUpx : $_"
+            exit 1
+        }
     }
-} else {
-    Write-Warning "UPX not found. Skipping UPX artifacts." 
+    else {
+        Write-Warning "  [Failed] UPX compression failed (Exit Code: $LASTEXITCODE). Skipping UPX artifacts."
+    }
+}
+else {
+    Write-Warning "  [Not Found] UPX not found. Skipping UPX artifacts." 
     # Not failing the build, just skipping optional artifacts
 }
 
+Write-Host "→ build: finished at $(Get-Date)"
 exit 0
