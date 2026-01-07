@@ -2,9 +2,9 @@ name: CI/CD
 
 on:
   push:
-    branches: [ "main", "master" ]
+    branches: ["main", "master"]
   pull_request:
-    branches: [ "main", "master" ]
+    branches: ["main", "master"]
 
 permissions:
   contents: write
@@ -53,8 +53,10 @@ jobs:
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: nodejs-sea-hide-passthrough-exe
-          path: nodejs-sea-hide-passthrough.exe
+          name: nodejs-sea-hide-passthrough-package
+          path: |
+            nodejs-sea-hide-passthrough.exe
+            config.ini
           if-no-files-found: error
 
   release:
@@ -63,12 +65,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Download Artifact
         uses: actions/download-artifact@v4
         with:
-          name: nodejs-sea-hide-passthrough-exe
-      
+          name: nodejs-sea-hide-passthrough-package
+
       - name: Generate Version
         id: version
         run: |
@@ -77,12 +79,12 @@ jobs:
           TAG="v${YEAR}.${RUN_NUM}"
           echo "tag=$TAG" >> $GITHUB_OUTPUT
           echo "Generated version: $TAG"
-          
+
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ steps.version.outputs.tag }}
           name: Release ${{ steps.version.outputs.tag }}
-          files: nodejs-sea-hide-passthrough.exe
-          draft: false
-          prerelease: false
+          files: |
+            nodejs-sea-hide-passthrough.exe
+            config.ini

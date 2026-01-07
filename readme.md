@@ -9,11 +9,18 @@
 This a simple binary passthrough that hides the console window when a SEA (Single Executable Application) is opened. Useful when you want a simple nodejs SEA to run on the background and don't show any console windows. It also passes along every console argument through.
 
 ## Usage
-1. Install AutoIt3
-2. Edit `nodejs-sea-hide-passthrough.au3` and replace `NAME_OF_YOUR_BINARY` with your SEA name
-3. Build the `au3` file
-4. Place it next to the SEA 
-5. Execute
+1. Download the latest release (`nodejs-sea-hide-passthrough.exe` and `config.ini`).
+2. Place both files in the same directory as your Node.js SEA (or any other executable you want to hide).
+3. Edit `config.ini` and set `Target=YOUR_APP_NAME.exe`.
+4. Run `nodejs-sea-hide-passthrough.exe`. It will launch your app in a hidden window and pass all arguments to it.
+
+## Configuration (config.ini)
+The behavior is controlled by `config.ini`:
+```ini
+[Settings]
+; The name of the Single Executable Application (SEA) or binary to launch.
+Target=helo.exe
+```
 
 ## Creating a Node.js Single Executable Application (SEA)
 
