@@ -49,27 +49,38 @@ if (-not (Get-Command $aut2Exe -ErrorAction SilentlyContinue) -and -not (Test-Pa
     exit 1
 }
 
-$buildArgs = @("/in", "$scriptName", "/out", "$exeName")
+# Convert to absolute paths to avoid issues with Aut2Exe
+$scriptAbs = (Resolve-Path $scriptName).Path
+$exeAbs = "$PWD\$exeName"
+$iconAbs = if (Test-Path $iconName) { (Resolve-Path $iconName).Path } else { $null }
 
-if (Test-Path $iconName) {
+$buildArgs = @("/in", "$scriptAbs", "/out", "$exeAbs")
+
+if ($iconAbs) {
     Write-Host "  [Info] Icon file found, adding to build arguments."
     $buildArgs += "/icon"
-    $buildArgs += "$iconName"
+    $buildArgs += "$iconAbs"
 }
 else {
     Write-Host "  [Info] Icon file not found, skipping icon."
 }
 
+# Add x64 flag if running on 64-bit OS? Unsure if needed, but sometimes helps.
+# Removing implicit assumptions.
+
 Write-Host "Compiling $scriptName -> $exeName..."
 Write-Host "  Command: & `"$aut2Exe`" $buildArgs"
-& $aut2Exe $buildArgs
+
+# Execute
+$process = Start-Process -FilePath $aut2Exe -ArgumentList $buildArgs -Wait -NoNewWindow -PassThru
+$exitCode = $process.ExitCode
 
 if (Test-Path $exeName) {
-    Write-Host "Build successful: $exeName (Exit Code: $LASTEXITCODE)"
+    Write-Host "Build successful: $exeName (Exit Code: $exitCode)"
     Write-Host "  File size: $((Get-Item $exeName).Length) bytes"
 }
 else {
-    Write-Error "Build failed. Output file '$exeName' not created. Exit Code: $LASTEXITCODE"
+    Write-Error "Build failed. Output file '$exeName' not created. Exit Code: $exitCode"
     exit 1
 }
 
