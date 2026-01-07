@@ -76,7 +76,7 @@ jobs:
         run: |
           YEAR=$(date +'%y')
           RUN_NUM=${{ github.run_number }}
-          TAG="v${YEAR}.${RUN_NUM}"
+          TAG="${YEAR}.${RUN_NUM}"
           echo "tag=$TAG" >> $GITHUB_OUTPUT
           echo "Generated version: $TAG"
 
