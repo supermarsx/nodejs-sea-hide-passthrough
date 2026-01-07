@@ -36,6 +36,9 @@ if ($files.Count -eq 0) {
 $anyError = $false
 
 foreach ($file in $files) {
+    # Skip backup/TidyBackup/node_modules folders if present
+    if ($file.FullName -match "\\TidyBackup\\|\\Backup\\|\\node_modules\\") { continue }
+
     Write-Host "Checking: $($file.Name)"
     & $au3Check "$($file.FullName)"
     if ($LASTEXITCODE -ne 0) {
@@ -46,7 +49,8 @@ foreach ($file in $files) {
 if ($anyError) {
     Write-Host "Linting encountered errors."
     exit 1
-} else {
+}
+else {
     Write-Host "Linting passed."
     exit 0
 }

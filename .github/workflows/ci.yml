@@ -1,0 +1,42 @@
+name: CI
+
+on:
+  push:
+    branches: ["main", "master"]
+  pull_request:
+    branches: ["main", "master"]
+
+jobs:
+  build-and-test:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install AutoIt
+        # Chocolatey is available on GitHub Actions Windows runners
+        run: choco install autoit --no-progress
+
+      - name: Lint (Au3Check)
+        run: .\dev-scripts\lint.ps1
+        shell: powershell
+
+      - name: Format Check (Tidy)
+        run: .\dev-scripts\format.ps1
+        shell: powershell
+
+      - name: Test
+        run: .\dev-scripts\test.ps1
+        shell: powershell
+
+      - name: Build (Aut2Exe)
+        run: .\dev-scripts\build.ps1
+        shell: powershell
+
+      - name: Upload Artifact
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nodejs-sea-hide-passthrough-exe
+          path: nodejs-sea-hide-passthrough.exe
+          if-no-files-found: warn
