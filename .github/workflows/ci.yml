@@ -1,42 +1,88 @@
-name: CI
+name: CI/CD
 
 on:
   push:
-    branches: ["main", "master"]
+    branches: [ "main", "master" ]
   pull_request:
-    branches: ["main", "master"]
+    branches: [ "main", "master" ]
+
+permissions:
+  contents: write
 
 jobs:
-  build-and-test:
+  lint:
     runs-on: windows-latest
-
     steps:
       - uses: actions/checkout@v4
-
       - name: Install AutoIt
-        # Chocolatey is available on GitHub Actions Windows runners
         run: choco install autoit --no-progress
-
-      - name: Lint (Au3Check)
+      - name: Lint
         run: .\dev-scripts\lint.ps1
         shell: powershell
 
-      - name: Format Check (Tidy)
+  format:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install AutoIt
+        run: choco install autoit --no-progress
+      - name: Format Check
         run: .\dev-scripts\format.ps1
         shell: powershell
 
+  test:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install AutoIt
+        run: choco install autoit --no-progress
       - name: Test
         run: .\dev-scripts\test.ps1
         shell: powershell
 
-      - name: Build (Aut2Exe)
+  build:
+    needs: [lint, format, test]
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install AutoIt
+        run: choco install autoit --no-progress
+      - name: Build
         run: .\dev-scripts\build.ps1
         shell: powershell
-
       - name: Upload Artifact
-        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: nodejs-sea-hide-passthrough-exe
           path: nodejs-sea-hide-passthrough.exe
-          if-no-files-found: warn
+          if-no-files-found: error
+
+  release:
+    needs: build
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Download Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: nodejs-sea-hide-passthrough-exe
+      
+      - name: Generate Version
+        id: version
+        run: |
+          YEAR=$(date +'%y')
+          RUN_NUM=${{ github.run_number }}
+          TAG="v${YEAR}.${RUN_NUM}"
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          echo "Generated version: $TAG"
+          
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: Release ${{ steps.version.outputs.tag }}
+          files: nodejs-sea-hide-passthrough.exe
+          draft: false
+          prerelease: false
