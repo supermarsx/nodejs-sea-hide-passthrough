@@ -45,11 +45,11 @@ if (Test-Path $iconName) {
 Write-Host "Compiling $scriptName -> $exeName..."
 & $aut2Exe $buildArgs
 
-if ($LASTEXITCODE -eq 0) {
-    Write-Host "Build successful: $exeName"
+if (Test-Path $exeName) {
+    Write-Host "Build successful: $exeName (Exit Code: $LASTEXITCODE)"
 } else {
-    Write-Host "Build failed."
-    exit $LASTEXITCODE
+    Write-Error "Build failed. Output file '$exeName' not created. Exit Code: $LASTEXITCODE"
+    exit 1
 }
 
 # --- Packaging & UPX ---
